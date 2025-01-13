@@ -114,7 +114,7 @@ function matrix_ultraS_br(lincoeffs::Vector{Vector{T}}, n::Integer, br::Function
 
     # construct the rhs
     b = zeros(T, n-N)
-    mul!(b, view(A, :, 1:length(v)), v, -1, true)
+    mul!(b, view(A, 1:length(b), 1:length(v)), v, -1, true)
 
     # left multiplication of matrix related to basis recombination
     W = br(T, n)
