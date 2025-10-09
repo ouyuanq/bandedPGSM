@@ -11,6 +11,7 @@ include("BasisRecombination.jl")
 include("MatrixPG.jl")
 include("MatrixUS.jl")
 include("Banded.jl")
+include("Vandermonde.jl")
 
 # GSBSPG
 include("GSBSPG.jl")

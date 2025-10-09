@@ -76,6 +76,16 @@ xlim([n(1) / 1.1, n(end)*1.1])
 ylim([min(A(:, 2:end), [], 'all') / 1.5, max(A(:, 2:end), [], 'all') * 2])
 
 exportgraphics(gcf, 'time_taylor.png', 'Resolution', 200)
+
+% B = readmatrix("ex1_shenfun_time.txt");
+% A = [A, B];
+% loglog(n, A(1:length(n), 5), '-sk', 'LineWidth', 1, 'MarkerSize', 8)
+% legend('new', 'MPG(R)', 'MPG(NI)', 'Shenfun', 'Interpreter', 'latex', 'Location', 'northwest', 'FontSize', 12)
+% loglog(n(end-2:end), n(end-2:end) .^ 2 / n(end) ^ 2 * (A(end, 5) * 1.2), '--k', 'LineWidth', 1.2, 'HandleVisibility', 'off')
+% text(2e3, 2e1, '$\mathcal{O}(n^2)$', 'Interpreter', 'latex', 'FontSize', 12)
+% xlim([n(1) / 1.1, n(end)*1.1])
+% ylim([min(A(:, 2:end), [], 'all') / 1.5, max(A(:, 2:end), [], 'all') * 2])
+% exportgraphics(gcf, 'time_taylor_reply.png', 'Resolution', 200)
 %%
 A = readmatrix("ex1_accuracy.txt");
 n = A(:, 1);
@@ -187,3 +197,49 @@ xlim([n(1) / 1.1, n(end)*1.1])
 ylim([min(A(:, 2:end), [], 'all') / 1.5, max(A(:, 2:end), [], 'all') * 2])
 
 exportgraphics(gcf, 'tenth_sol.png', 'Resolution', 200)
+
+%% Example 4
+A = readmatrix("ex4_time.txt");
+n = A(:, 1);
+
+figure
+set(gcf, 'Position', [200 200 600 350])
+loglog(n, A(:, 2), '-ok', 'LineWidth', 1, 'MarkerSize', 8)
+hold on
+loglog(n, A(:, 3), '-*k', 'LineWidth', 1, 'MarkerSize', 8)
+loglog(n, A(:, 4), '-+k', 'LineWidth', 1, 'MarkerSize', 8)
+
+legend('new', 'MPG(R)', 'MPG(NI)', 'Interpreter', 'latex', 'Location', 'northwest', 'FontSize', 12)
+xlabel('$n$', 'Interpreter', 'latex', 'FontSize', 12)
+ylabel('construction time (sec)', 'Interpreter', 'latex', 'FontSize', 12)
+set(gca, 'FontName', 'Times New Roman', 'FontSize', 12)
+
+loglog(n(end-4:end), n(end-4:end) / n(end) * (A(end, 2) / 1.7), '--k', 'LineWidth', 1.2, 'HandleVisibility', 'off')
+text(3e3, 2e-3, '$\mathcal{O}(n)$', 'Interpreter', 'latex', 'FontSize', 12)
+loglog(n(end-2:end), n(end-2:end) .^ 2 / n(end)^2 * (A(end, 4) * 1.2), '--k', 'LineWidth', 1.2, 'HandleVisibility', 'off')
+text(2.5e3, 4, '$\mathcal{O}(n^2)$', 'Interpreter', 'latex', 'FontSize', 12)
+
+xlim([n(1) / 1.1, n(end)*1.1])
+ylim([min(A(:, 2:end), [], 'all') / 1.5, max(A(:, 2:end), [], 'all') * 2])
+
+exportgraphics(gcf, 'composite_con.png', 'Resolution', 200)
+%%
+A = readmatrix("ex4_accuracy.txt");
+n = A(:, 1);
+
+figure
+set(gcf, 'Position', [200 200 600 350])
+loglog(n, A(:, 2), '-ok', 'LineWidth', 1, 'MarkerSize', 8)
+hold on
+loglog(n, A(:, 3), '-*k', 'LineWidth', 1, 'MarkerSize', 8)
+loglog(n, A(:, 4), '-+k', 'LineWidth', 1, 'MarkerSize', 8)
+
+% legend('new', 'MPG(R)', 'MPG(NI)', 'latex', 'Location', 'northwest', 'FontSize', 12)
+xlabel('$n$', 'Interpreter', 'latex', 'FontSize', 12)
+ylabel('$L^2$ error', 'Interpreter', 'latex', 'FontSize', 12)
+set(gca, 'FontName', 'Times New Roman', 'FontSize', 12)
+
+xlim([n(1) / 1.1, n(end)*1.1])
+ylim([min(A(:, 2:end), [], 'all') / 1.5, max(A(:, 2:end), [], 'all') * 2])
+
+exportgraphics(gcf, 'composite_acc.png', 'Resolution', 200)

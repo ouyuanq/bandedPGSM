@@ -7,6 +7,7 @@ using BenchmarkTools, DelimitedFiles, Printf
 T = Float64
 airy_coeffs, airy_v = airy(T)
 airy_coeffs_GSBSPG, airy_v_GSBSPG = airy_GSBSPG(T)
+N = length(airy_coeffs) - 1
 f = x -> 0*x
 
 # solving speed
@@ -23,7 +24,7 @@ for i in eachindex(nvec)
     time_solve[i, 1] = minimum(ben).time / 1e9
 
     # GSBSPG (recurrence)
-    fc = Chebyshev_rhs_NI(T, f, n-2, n, 2)
+    fc = Chebyshev_rhs_NI(T, f, n-N, n, N)
     ben = @benchmark GSBSPG_Chebyshev_solve($(T), $(airy_coeffs_GSBSPG), $(airy_Wtrial), $(airy_v_GSBSPG), $(fc))
     time_solve[i, 2] = minimum(ben).time / 1e9
 
@@ -55,7 +56,7 @@ for i in eachindex(nvec)
     accuracy[i, 1] = Chebyshev_L2error(u, ue, nvec[end])
 
     # GSBSPG (recurrence)
-    fc = Chebyshev_rhs_NI(T, f, n-2, n, 2)
+    fc = Chebyshev_rhs_NI(T, f, n-N, n, N)
     u = GSBSPG_Chebyshev_solve(T, airy_coeffs_GSBSPG, airy_Wtrial, airy_v_GSBSPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 

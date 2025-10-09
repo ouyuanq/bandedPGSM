@@ -2,11 +2,12 @@ include("../src/BandedPG.jl")
 include("Examples.jl")
 using BenchmarkTools, DelimitedFiles, Printf
 
-# solving ODE u''' - cos(x) * u'' + 10 * exp(x) * u = x^3*exp(x^2/2 - 1/2) + 10*exp(x)*exp(x^2/2 - 1/2) + 3*x*exp(x^2/2 - 1/2) - x*exp(x^2/2 - 1/2)*cos(x), u(-1) = u (1) = 1, u'(1) = 1, s.t. u = exp((x^2 - 1) / 2)
+# solving ODE u''' - cos(x) * u'' + 10 * exp(x) * u = exp((x^2 - 1)/2) * (3*x - cos(x) + 10*exp(x) - x^2*cos(x) + x^3), u(-1) = u (1) = 1, u'(1) = 1, s.t. u = exp((x^2 - 1) / 2)
 
 T = Float64
 expcos_coeffs, expcos_v = expcos(T)
 expcos_coeffs_GSBSPG, expcos_v_GSBSPG = expcos_GSBSPG(T)
+N = length(expcos_coeffs) - 1
 
 # construction speed
 nvec = 2 .^ (3:13)
@@ -38,7 +39,6 @@ end
 nvec = [8:2:30; 2 .^ (5:13)]
 accuracy = zeros(length(nvec), 4)
 f = x -> exp((x^2 - 1)/2) * (3*x - cos(x) + 10*exp(x) - x^2*cos(x) + x^3)
-# f = x -> x^3*exp(x^2/2 - 1/2) + 10*exp(x)*exp(x^2/2 - 1/2) + 3*x*exp(x^2/2 - 1/2) - x*exp(x^2/2 - 1/2)*cos(x)
 ue = x -> exp((x^2 - 1) / 2)
 for i in eachindex(nvec)
     @printf "Accuracy No.%i\n" i
@@ -51,7 +51,7 @@ for i in eachindex(nvec)
     accuracy[i, 1] = Chebyshev_L2error(u, ue, nvec[end])
 
     # GSBSPG (recurrence)
-    fc = Chebyshev_rhs_NI(T, f, n-3, n, 3)
+    fc = Chebyshev_rhs_NI(T, f, n-N, n, N)
     u = GSBSPG_Chebyshev_solve(T, expcos_coeffs_GSBSPG, expcos_Wtrial, expcos_v_GSBSPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 

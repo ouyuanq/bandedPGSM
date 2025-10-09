@@ -146,6 +146,64 @@ function tenth_ultraS(::Type{T}, n::Integer) where {T}
     lincoeffs, bc, bcvals
 end
 
+## a second order differential equation with composite coefficients
+function composite(::Type{T}) where {T}
+    # u'' - cos(sin(2*pi*x + 1)) * u = f, u(-1) = u (1) = sin(2)
+    lincoeffs = Vector{Vector{T}}(undef, 3)
+
+    lincoeffs[1] = coeffs(x -> -cos(sin(2*pi*x + 1)), T)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[3] = ones(T, 1)
+
+    v = [sin(T(2)); 0]
+
+    lincoeffs, v
+end
+
+composite(::Type{T}, n::Integer) where {T} = secondDirichlet_ChebyshevW(T, n)
+
+function composite_GSBSPG(::Type{T}) where {T}
+    # u'' - cos(sin(2*pi*x + 1)) * u = f, u(-1) = u (1) = sin(2)
+    lincoeffs = Vector{Vector{T}}(undef, 3)
+
+    lincoeffs[1] = poly_coeffs(T, x -> -cos(sin(2*pi*x + 1)), 92)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[3] = ones(T, 1)
+
+    v = [sin(T(2)); 0]
+
+    lincoeffs, v
+end
+
+## a third order differential equation with integral condition
+function expcos(::Type{T}) where {T}
+    # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
+    lincoeffs = Vector{Vector{T}}(undef, 4)
+
+    lincoeffs[1] = coeffs(cos, T)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[3] = lmul!(-1, coeffs(exp, T))
+    lincoeffs[4] = ones(T, 1)
+
+    v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
+
+    lincoeffs, T.(v)
+end
+
+function expcos_GSBSPG(::Type{T}) where {T}
+    # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
+    lincoeffs = Vector{Vector{T}}(undef, 4)
+
+    lincoeffs[1] = costaylor(T, 16)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[3] = lmul!(-1, exptaylor(T, 16))
+    lincoeffs[4] = ones(T, 1)
+
+    v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
+
+    lincoeffs, T.(v)
+end
+
 ## Taylor expansions
 function exptaylor(::Type{T}, n::Integer) where {T}
     # compute the Taylor expansion of exp(x) at 0 till degree n monomials (x^n)
