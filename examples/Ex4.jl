@@ -2,13 +2,13 @@ include("../src/BandedPG.jl")
 include("Examples.jl")
 using BenchmarkTools, DelimitedFiles, Printf
 
-# solving ODE u'' - cos(sin(2*pi*x + 1)) * u = - cos(sin(2*pi*x + 1))*sin(cos(20*pi*x) + 1) - 400*pi^2*sin(cos(20*pi*x) + 1)*sin(20*pi*x)^2 - 400*pi^2*cos(cos(20*pi*x) + 1)*cos(20*pi*x), u(-1) = u (1) = sin(2), s.t. u = sin(cos(20*pi*x) + 1)
+# solving ODE u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = - cos(4 * sin(3*pi*x^2 + 1))*sin(cos(20*pi*x) + 1) - 400*pi^2*sin(cos(20*pi*x) + 1)*sin(20*pi*x)^2 - 400*pi^2*cos(cos(20*pi*x) + 1)*cos(20*pi*x), u(-1) = u (1) = sin(2), s.t. u = sin(cos(20*pi*x) + 1)
 
 T = Float64
 composite_coeffs, composite_v = composite(T)
 composite_coeffs_GSBSPG, composite_v_GSBSPG = composite_GSBSPG(T)
 composite_funcs = Vector{Function}(undef, 3)
-composite_funcs[1] = x -> -cos(sin(2*pi*x + 1))
+composite_funcs[1] = x -> -cos(4 * sin(3*pi*x^2 + 1))
 composite_funcs[3] = x -> 1
 N = length(composite_funcs) - 1
 # parameter for determining bandwidths in final matrix derived from numerical integration
@@ -42,7 +42,7 @@ end
 
 # accuracy
 ue = x -> sin(cos(20*pi*x) + 1)
-f = x -> - cos(sin(2*pi*x + 1))*sin(cos(20*pi*x) + 1) - 400*pi^2*sin(cos(20*pi*x) + 1)*sin(20*pi*x)^2 - 400*pi^2*cos(cos(20*pi*x) + 1)*cos(20*pi*x)
+f = x -> -cos(4 * sin(3*pi*x^2 + 1))*sin(cos(20*pi*x) + 1) - 400*pi^2*sin(cos(20*pi*x) + 1)*sin(20*pi*x)^2 - 400*pi^2*cos(cos(20*pi*x) + 1)*cos(20*pi*x)
 nvec = [2 .^ (4:8); 300:100:800; 2 .^(10:13)]
 accuracy = zeros(length(nvec), 3)
 

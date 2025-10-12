@@ -148,10 +148,10 @@ end
 
 ## a second order differential equation with composite coefficients
 function composite(::Type{T}) where {T}
-    # u'' - cos(sin(2*pi*x + 1)) * u = f, u(-1) = u (1) = sin(2)
+    # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
-    lincoeffs[1] = coeffs(x -> -cos(sin(2*pi*x + 1)), T)
+    lincoeffs[1] = coeffs(x -> -cos(4 * sin(3*pi*x^2 + 1)), T)
     lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = ones(T, 1)
 
@@ -163,10 +163,10 @@ end
 composite(::Type{T}, n::Integer) where {T} = secondDirichlet_ChebyshevW(T, n)
 
 function composite_GSBSPG(::Type{T}) where {T}
-    # u'' - cos(sin(2*pi*x + 1)) * u = f, u(-1) = u (1) = sin(2)
+    # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
-    lincoeffs[1] = poly_coeffs(T, x -> -cos(sin(2*pi*x + 1)), 92)
+    lincoeffs[1] = poly_coeffs(T, x -> -cos(4 * sin(3*pi*x^2 + 1)), 216)
     lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = ones(T, 1)
 
