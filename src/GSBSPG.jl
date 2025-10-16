@@ -214,7 +214,7 @@ end
 function GSBSPG_Chebyshev_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
     # construct the GSBSPG discretization (recursion) of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver
 
-    n = size(K, 2)
+    n = size(K, 1)
     if length(fc) >= n
         f = fc[1:n]
     else
@@ -226,7 +226,7 @@ function GSBSPG_Chebyshev_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::Band
     L, u = GSBSPG_Chebyshev(T, lincoeffs, K, bc, f)
 
     # standard solver (note that L is constructed with extra upper diagonals for factorization)
-    ldiv!(lu!(L), u)
+    ldiv!(lu!(L), view(u, 1:size(K, 2)))
     
     # convert back to Chebyshev series x = K * x + bc
     Wlmul!(K, u)

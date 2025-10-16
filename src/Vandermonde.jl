@@ -1,12 +1,12 @@
 # computing the coefficients of monomial expansion of a function
-import Polynomials.coeffs as pcoeffs
-import Polynomials.fit as pfit
+# import Polynomials.coeffs as pcoeffs
+# import Polynomials.fit as pfit
 
 function poly_coeffs(::Type{T}, f::Function, n::Integer) where T
     # compute the first n+1 monomial coefficients of function f through solving a Vandermonde matrix
     
     # x = chebpts(10n+1, T)
-    x = range(-1, 1, length = 10n+1)
+    x = range(-one(T), one(T), length = 10n+1)
 
     # # Vandermonde matrix
     # V = Matrix{T}(undef, length(x), n+1)
@@ -20,4 +20,16 @@ function poly_coeffs(::Type{T}, f::Function, n::Integer) where T
     # return ldiv!(Vector{T}(undef, n+1), qr!(V), rhs)
 
     return pcoeffs(pfit(x, f.(x), n))
+end
+
+function poly_coeffs_res(::Type{T}, f::Function, n::Integer) where T
+    # compute the first n+1 monomial coefficients of function f through solving a Vandermonde matrix
+    
+    # x = chebpts(10n+1, T)
+    x = range(-one(T), one(T), length = 10n+1)
+
+    fx = f.(x)
+    c = pfit(x, fx, n)
+
+    return norm(fx - c.(x))
 end

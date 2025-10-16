@@ -166,6 +166,24 @@ function Wrmul!(A::BandedMatrix{T}, W::BandedMatrix{T}, Au::Integer) where T
     _BandedMatrix(view(Adata, :, 1:size(W, 2)), Base.OneTo(size(A, 1)), A.l, A.u)
 end
 
+function Wrmul!(A::Matrix{T}, W::BandedMatrix{T}) where T
+    # overwirte A with A * W, where W is a lowertriangular matrix with lower bandwidth Wl and A is a dense matrix
+
+    @assert W.u == 0 "Only lowertriangular matrix are allowed"
+    @assert size(A, 2) == size(W, 1) "Incompatible dimensions of A and W"
+    N = W.l
+    Wdata, Wu = W.data, W.u
+    @inbounds for j in axes(Wdata, 2)
+        lmul!(inbands_getindex(Wdata, Wu, j, j), view(A, :, j))
+        for k = 1:N
+            axpy!(inbands_getindex(Wdata, Wu, j+k, j), view(A, :, j+k), view(A, :, j))
+        end
+    end
+
+    # discard the last N columns
+    view(A, :, 1:size(W, 2))
+end
+
 function Wtlmul!(W::BandedMatrix{T}, A::BandedMatrix{T}, Aunow::Integer) where T
     # overwirte A with W^T * A, where W is banded lowertriangular matrix and only Aunow superdiagonals of A are nonzero
     @assert W.u == 0 "Only lowertriangular matrix are allowed"

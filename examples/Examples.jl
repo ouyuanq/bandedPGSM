@@ -29,6 +29,18 @@ function airy_GSBSPG(::Type{T}; epsilon=T(1e-9)) where {T}
     lincoeffs, v
 end
 
+function airy_GSBSPG_NI(::Type{T}; epsilon=T(1e-9)) where {T}
+    # epsilon * u'' - x * u = 0, u(-1) = Ai(-(1/epsilon)^(1/3)), u(1) = Ai((1/epsilon)^(1/3))
+    lincoeffs = Vector{Function}(undef, 3)
+
+    lincoeffs[1] = x -> -x
+    lincoeffs[3] = x -> epsilon
+
+    v = [1 -1; 1 1] \ [airyai(-(1 / epsilon)^(1 / 3)); airyai((1 / epsilon)^(1 / 3))]
+
+    lincoeffs, v
+end
+
 function airy_ultraS(::Type{T}, n::Integer; epsilon=T(1e-9)) where {T}
     # epsilon * u'' - x * u = 0, u(-1) = Ai(-(1/epsilon)^(1/3)), u(1) = Ai((1/epsilon)^(1/3))
     lincoeffs = Vector{Vector{T}}(undef, 3)
@@ -68,6 +80,19 @@ function expcos_GSBSPG(::Type{T}) where {T}
     lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = lmul!(-1, costaylor(T, 16))
     lincoeffs[4] = ones(T, 1)
+
+    v = [3; 0; 1] ./ 4
+
+    lincoeffs, v
+end
+
+function expcos_GSBSPG_NI(::Type{T}) where {T}
+    # u''' - cos(x) * u'' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
+    lincoeffs = Vector{Function}(undef, 4)
+
+    lincoeffs[1] = x -> 10 * exp(x)
+    lincoeffs[3] = x -> -cos(x)
+    lincoeffs[4] = x -> 1
 
     v = [3; 0; 1] ./ 4
 
@@ -166,7 +191,7 @@ function composite_GSBSPG(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
-    lincoeffs[1] = poly_coeffs(T, x -> -cos(4 * sin(3*pi*x^2 + 1)), 216)
+    lincoeffs[1] = poly_coeffs(T, x -> -cos(4 * sin(3*pi*x^2 + 1)), 100)
     lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = ones(T, 1)
 
@@ -175,34 +200,46 @@ function composite_GSBSPG(::Type{T}) where {T}
     lincoeffs, v
 end
 
-## a third order differential equation with integral condition
-function expcos(::Type{T}) where {T}
-    # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
-    lincoeffs = Vector{Vector{T}}(undef, 4)
+function composite_GSBSPG_NI(::Type{T}) where {T}
+    # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
+    lincoeffs = Vector{Function}(undef, 3)
 
-    lincoeffs[1] = coeffs(cos, T)
-    lincoeffs[2] = zeros(T, 0)
-    lincoeffs[3] = lmul!(-1, coeffs(exp, T))
-    lincoeffs[4] = ones(T, 1)
+    lincoeffs[1] = x -> -cos(4 * sin(3*pi*x^2 + 1))
+    lincoeffs[3] = x -> 1
 
-    v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
+    v = [sin(T(2)); 0]
 
-    lincoeffs, T.(v)
+    lincoeffs, v
 end
 
-function expcos_GSBSPG(::Type{T}) where {T}
-    # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
-    lincoeffs = Vector{Vector{T}}(undef, 4)
+# ## a third order differential equation with integral condition
+# function cosexp(::Type{T}) where {T}
+#     # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
+#     lincoeffs = Vector{Vector{T}}(undef, 4)
 
-    lincoeffs[1] = costaylor(T, 16)
-    lincoeffs[2] = zeros(T, 0)
-    lincoeffs[3] = lmul!(-1, exptaylor(T, 16))
-    lincoeffs[4] = ones(T, 1)
+#     lincoeffs[1] = coeffs(cos, T)
+#     lincoeffs[2] = zeros(T, 0)
+#     lincoeffs[3] = lmul!(-1, coeffs(exp, T))
+#     lincoeffs[4] = ones(T, 1)
 
-    v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
+#     v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
 
-    lincoeffs, T.(v)
-end
+#     lincoeffs, T.(v)
+# end
+
+# function cosexp_GSBSPG(::Type{T}) where {T}
+#     # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
+#     lincoeffs = Vector{Vector{T}}(undef, 4)
+
+#     lincoeffs[1] = costaylor(T, 16)
+#     lincoeffs[2] = zeros(T, 0)
+#     lincoeffs[3] = lmul!(-1, exptaylor(T, 16))
+#     lincoeffs[4] = ones(T, 1)
+
+#     v = [1 -1 1; 0 1 -4; 1 0 -1] \ [cos(sin(1)); -10*pi*cos(1)*sin(sin(1)); cos(sin(1))]
+
+#     lincoeffs, T.(v)
+# end
 
 ## Taylor expansions
 function exptaylor(::Type{T}, n::Integer) where {T}

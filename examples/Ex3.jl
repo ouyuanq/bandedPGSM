@@ -10,8 +10,9 @@ time_con = zeros(length(nvec), 2)
 time_sol = zeros(length(nvec), 2)
 T = Float64
 tenth_coeffs2, tenth_v = tenth(T)
+@printf "construction and solution cost of a tenth order equation:\n"
+@printf "    n    US(con)    US(sol)   accUS(con)   accUS(sol)\n"
 for i in eachindex(nvec)
-    @printf "Time No.%i\n" i
     n = nvec[i]
 
     # original US method
@@ -34,6 +35,8 @@ for i in eachindex(nvec)
         axpy!(true, $(tenth_v), view(x2, 1:10))
     end
     time_sol[i, 2] = minimum(ben).time / 1e9
+
+    @printf "%5i   %.2e   %.2e    %.2e     %.2e\n" n time_con[i, 1] time_sol[i, 1] time_con[i, 2] time_sol[i, 2]
 end
 open("examples/ex3_time.txt", "w") do io
     writedlm(io, [nvec time_con time_sol])
