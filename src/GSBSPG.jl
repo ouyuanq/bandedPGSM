@@ -201,8 +201,8 @@ function GSBSPG_Chebyshev(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatr
     end
 
     # add bc to rhs
-    bcrange = colrange(L, length(bc))
-    mul!(view(fc, bcrange), view(L, bcrange, 1:length(bc)), bc, -1, true)
+    bcrange = colrange(L, length(bc))[end]
+    mul!(view(fc, 1:bcrange), view(L, 1:bcrange, 1:length(bc)), bc, -1, true)
 
     # equip homogeneous boundary conditions to L (with ql+N nonzero upper diagonals)
     L = Wrmul!(L, K, ql + N)
@@ -467,8 +467,8 @@ function GSBSPG_Legendre(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatri
     end
 
     # add bc to rhs
-    bcrange = colrange(L, length(bc))
-    mul!(view(fc, bcrange), view(L, bcrange, 1:length(bc)), bc, -1, true)
+    bcrange = colrange(L, length(bc))[end]
+    mul!(view(fc, 1:bcrange), view(L, 1:bcrange, 1:length(bc)), bc, -1, true)
 
     # equip homogeneous boundary conditions to L
     L = L * K

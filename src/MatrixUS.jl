@@ -15,6 +15,8 @@ function ultraSsolve(lincoeffs::Vector{Vector{T}}, bc::AbstractMatrix{T}, bcvals
         b = fastconv!(coeffs(f, T), 0, N)
     elseif isa(f, AbstractVector)
         b = fastconv!(f, 0, N)
+    else
+        error("f can only be a Function or an AbstractVector.")
     end
     prepend!(b, bcvals)
     if length(b) > n
@@ -75,22 +77,24 @@ function matrix_ultraS(lincoeffs::Vector{Vector{T}}, bc::AbstractMatrix{T}) wher
 end
 
 ## US + basis recombination
-function matrix_ultraS_br(lincoeffs::Vector{Vector{T}}, n::Integer, br::Function, v::Vector{T}) where T
+function matrix_ultraS_br(lincoeffs::Vector{Vector{T}}, f::AbstractVector{T}, R::BandedMatrix{T}, v::Vector{T}) where T
     # the same as matrix_ultraS except that boundary conditions are treated by basis recombination through function br
 
     N = length(lincoeffs) - 1
+    n = N + length(f)
+    @assert size(R) == (n, n-N) "wrong dimension of basis recombination matrix"
     lencoeffs = length.(lincoeffs)
 
     # the bandwidths of A
-    Al = maximum(lencoeffs .- (0:N)) - 1
-    Au = maximum(lencoeffs .+ (2*N:-1:N)) - 1
+    Ll = maximum(lencoeffs .- (0:N)) - 1
+    Lu = maximum(lencoeffs .+ (2*N:-1:N)) - 1
 
-    A = BandedMatrix(Zeros(T, n-N, n), (Al+N, Au))  # banded part of final matrix 
+    L = BandedMatrix(Zeros(T, n-N, n), (Ll+N, Lu))  # banded part of final matrix 
     Mu = maximum(lencoeffs)-1  # bandwidths for multiplication operator
     M = BandedMatrix(Zeros(T, n+N, n), (Mu, Mu))
 
     # construction for each term
-    Alnow, Aunow = -2*N, -2*N
+    Llnow, Lunow = -2*N, -2*N
     for i = 0:N
         if !isempty(lincoeffs[i+1])
             # nonzero terms
@@ -102,23 +106,21 @@ function matrix_ultraS_br(lincoeffs::Vector{Vector{T}}, n::Integer, br::Function
                 # differential operator application
                 broadcast!(*, Mdata_i, Mdata_i, ((2^(i-1)*factorial(i-1)) .* (i:n-1))')
             end
-            # add M * D to A
-            axpy!(true, Mdata_i, view(A.data, A.u+2-i-lencoeffs[i+1]:A.u-i+lencoeffs[i+1], i+1:n))
-            Alnow, Aunow = max(Alnow, lencoeffs[i+1]-1-i), max(Aunow, lencoeffs[i+1]-1+i)
+            # add M * D to L
+            axpy!(true, Mdata_i, view(L.data, L.u+2-i-lencoeffs[i+1]:L.u-i+lencoeffs[i+1], i+1:n))
+            Llnow, Lunow = max(Llnow, lencoeffs[i+1]-1-i), max(Lunow, lencoeffs[i+1]-1+i)
         end
         if i < N
-            Slmul!(A, i, i+1, Alnow, Aunow)
-            Aunow += 2
+            Slmul!(L, i, i+1, Llnow, Lunow)
+            Lunow += 2
         end
     end
 
     # construct the rhs
-    b = zeros(T, n-N)
-    mul!(b, view(A, 1:length(b), 1:length(v)), v, -1, true)
+    mul!(view(f, 1:colrange(L, length(v))[end]), view(L, 1:colrange(L, length(v))[end], 1:length(v)), v, -1, true)
 
     # left multiplication of matrix related to basis recombination
-    W = br(T, n)
-    AW = Wrmul!(A, W, Au)
+    LR = Wrmul!(L, R, Lu)
 
-    AW, W, b
+    LR, f
 end

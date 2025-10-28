@@ -14,32 +14,32 @@ ue = x -> airyai(1e3 * x)
 f = x -> 0*x
 
 # accuracy
-nvec = [2 .^ (4:14); 19600:100:20100; 2 .^ (15:16)]
+nvec = [2 .^ (4:14); 19600:100:20100; 25000; 30000; 2^16]
 accuracy = zeros(length(nvec), 5)
 @printf "solution accuracy of Airy equation:\n"
 @printf "    n   bandedPG    MPG(R)     MPG(NI)    ultraS\n"
 for i in eachindex(nvec)
     n = nvec[i]
-    airy_Wtrial, airy_Wtest, airy_Omega = airy(T, n)
+    airy_R, airy_Q, airy_Omega = airy(T, n)
 
     # banded PG method
-    u = bandedPGsolve(airy_coeffs, airy_v, airy_Wtrial, airy_Wtest, airy_Omega, f)
+    u = bandedPGsolve(airy_coeffs, airy_v, airy_R, airy_Q, airy_Omega, f)
     accuracy[i, 1] = Chebyshev_L2error(u, ue, nvec[end])
 
-    airy_Wtest = BandedMatrix((0 => Ones(T, n-N),), (n, n-N), (N, 0))
+    airy_Q = BandedMatrix((0 => Ones(T, n-N),), (n, n-N), (N, 0))
     airy_Omega = Diagonal(Ones(T, n))
 
-    u = bandedPGsolve(airy_coeffs, airy_v, airy_Wtrial, airy_Wtest, airy_Omega, f)
+    u = bandedPGsolve(airy_coeffs, airy_v, airy_R, airy_Q, airy_Omega, f)
     accuracy[i, 5] = Chebyshev_L2error(u, ue, nvec[end])
 
     # GSBSPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n, n, N)
-    u = GSBSPG_Chebyshev_solve(T, airy_coeffs_GSBSPG, airy_Wtrial, airy_v_GSBSPG, fc)
+    u = GSBSPG_Chebyshev_solve(T, airy_coeffs_GSBSPG, airy_R, airy_v_GSBSPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 
     # GSBSPG (numerical integration)
-    if n <= 8192
-        u = GSBSPG_Chebyshev_NI_solve(T, airy_coeffs_funcs, airy_Wtrial, airy_v_GSBSPG_NI, fc)
+    if n <= 30000
+        u = GSBSPG_Chebyshev_NI_solve(T, airy_coeffs_funcs, airy_R, airy_v_GSBSPG_NI, fc)
         accuracy[i, 3] = Chebyshev_L2error(u, ue, nvec[end])
     end
 
@@ -50,31 +50,31 @@ for i in eachindex(nvec)
 
     @printf "%5i   %.2e   %.2e   %.2e   %.2e\n" n accuracy[i, 1] accuracy[i, 2] accuracy[i, 3] accuracy[i, 4]
 end
-open("examples/ex2_accuracy.txt", "w") do io
+open("examples/airy_accuracy.txt", "w") do io
     writedlm(io, [nvec accuracy])
 end
 
 # solving speed
-nvec = 2 .^ (4:16)
+nvec = [2 .^ (4:14); 30000; 2^16]
 time_solve = zeros(length(nvec), 4)
 @printf "construction and solution cost of Airy equation:\n"
 @printf "    n   bandedPG    MPG(R)     MPG(NI)    ultraS\n"
 for i in eachindex(nvec)
     n = nvec[i]
-    airy_Wtrial, airy_Wtest, airy_Omega = airy(T, n)
+    airy_R, airy_Q, airy_Omega = airy(T, n)
 
     # banded PG method
-    ben = @benchmark bandedPGsolve($(airy_coeffs), $(airy_v), $(airy_Wtrial), $(airy_Wtest), $(airy_Omega), $(f))
+    ben = @benchmark bandedPGsolve($(airy_coeffs), $(airy_v), $(airy_R), $(airy_Q), $(airy_Omega), $(f))
     time_solve[i, 1] = minimum(ben).time / 1e9
 
     # GSBSPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n-N, n, N)
-    ben = @benchmark GSBSPG_Chebyshev_solve($(T), $(airy_coeffs_GSBSPG), $(airy_Wtrial), $(airy_v_GSBSPG), $(fc))
+    ben = @benchmark GSBSPG_Chebyshev_solve($(T), $(airy_coeffs_GSBSPG), $(airy_R), $(airy_v_GSBSPG), $(fc))
     time_solve[i, 2] = minimum(ben).time / 1e9
 
     # GSBSPG (numerical integration)
-    if n <= 8192
-        ben = @benchmark GSBSPG_Chebyshev_NI_solve($(T), $(airy_coeffs_funcs), $(airy_Wtrial), $(airy_v_GSBSPG_NI), $(fc))
+    if n <= 30000
+        ben = @benchmark GSBSPG_Chebyshev_NI_solve($(T), $(airy_coeffs_funcs), $(airy_R), $(airy_v_GSBSPG_NI), $(fc))
         time_solve[i, 3] = minimum(ben).time / 1e9
     end
 
@@ -85,6 +85,6 @@ for i in eachindex(nvec)
 
     @printf "%5i   %.2e   %.2e   %.2e   %.2e\n" n time_solve[i, 1] time_solve[i, 2] time_solve[i, 3] time_solve[i, 4]
 end
-open("examples/ex2_time.txt", "w") do io
+open("examples/airy_time.txt", "w") do io
     writedlm(io, [nvec time_solve])
 end

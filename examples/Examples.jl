@@ -14,7 +14,7 @@ function airy(::Type{T}; epsilon=T(1e-9)) where {T}
     lincoeffs, v
 end
 
-airy(::Type{T}, n::Integer) where {T} = secondDirichlet_ChebyshevW(T, n)
+airy(::Type{T}, n::Integer) where {T} = secondDirichlet_Chebyshev(T, n)
 
 function airy_GSBSPG(::Type{T}; epsilon=T(1e-9)) where {T}
     # epsilon * u'' - x * u = 0, u(-1) = Ai(-(1/epsilon)^(1/3)), u(1) = Ai((1/epsilon)^(1/3))
@@ -56,13 +56,13 @@ function airy_ultraS(::Type{T}, n::Integer; epsilon=T(1e-9)) where {T}
     lincoeffs, bc, bcvals
 end
 
-function expcos(::Type{T}) where {T}
-    # u''' - cos(x) * u'' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
+function taylor(::Type{T}) where {T}
+    # u''' - (cos(x) + 2) * u' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
     lincoeffs = Vector{Vector{T}}(undef, 4)
 
     lincoeffs[1] = lmul!(10, coeffs(exp, T))
-    lincoeffs[2] = zeros(T, 0)
-    lincoeffs[3] = lmul!(-1, coeffs(cos, T))
+    lincoeffs[2] = lmul!(-1, coeffs(cos, T)); lincoeffs[2][1] -= 2
+    lincoeffs[3] = zeros(T, 0)
     lincoeffs[4] = ones(T, 1)
 
     v = [3; 0; 1] ./ 4
@@ -70,15 +70,15 @@ function expcos(::Type{T}) where {T}
     lincoeffs, v
 end
 
-expcos(::Type{T}, n::Integer) where {T} = thirdrightNeumann_ChebyshevW(T, n)
+taylor(::Type{T}, n::Integer) where {T} = thirdrightNeumann_Chebyshev(T, n)
 
-function expcos_GSBSPG(::Type{T}) where {T}
-    # u''' - cos(x) * u'' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
+function taylor_GSBSPG(::Type{T}) where {T}
+    # u''' - (cos(x) + 2) * u' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
     lincoeffs = Vector{Vector{T}}(undef, 4)
 
-    lincoeffs[1] = lmul!(10, exptaylor(T, 17))
-    lincoeffs[2] = zeros(T, 0)
-    lincoeffs[3] = lmul!(-1, costaylor(T, 16))
+    lincoeffs[1] = lmul!(10, exptaylor(T, 18))
+    lincoeffs[2] = lmul!(-1, costaylor(T, 18)); lincoeffs[2][1] -= 2
+    lincoeffs[3] = zeros(T, 0)
     lincoeffs[4] = ones(T, 1)
 
     v = [3; 0; 1] ./ 4
@@ -86,12 +86,12 @@ function expcos_GSBSPG(::Type{T}) where {T}
     lincoeffs, v
 end
 
-function expcos_GSBSPG_NI(::Type{T}) where {T}
-    # u''' - cos(x) * u'' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
+function taylor_GSBSPG_NI(::Type{T}) where {T}
+    # u''' - (cos(x) + 2) * u' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
     lincoeffs = Vector{Function}(undef, 4)
 
     lincoeffs[1] = x -> 10 * exp(x)
-    lincoeffs[3] = x -> -cos(x)
+    lincoeffs[2] = x -> -cos(x)-2
     lincoeffs[4] = x -> 1
 
     v = [3; 0; 1] ./ 4
@@ -176,26 +176,34 @@ function composite(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
-    lincoeffs[1] = coeffs(x -> -cos(4 * sin(3*pi*x^2 + 1)), T)
-    lincoeffs[2] = zeros(T, 0)
+    # lincoeffs[1] = coeffs(x -> -cos(4 * sin(3*pi*x^2 + 1)), T)
+    lincoeffs[1] = coeffs(x -> -x^10, T)
+    # lincoeffs[2] = coeffs(x -> x^77, T)
+    lincoeffs[2] = coeffs(x -> atan(3/4*x), T)
+    # lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = ones(T, 1)
 
     v = [sin(T(2)); 0]
+    # v = [one(T); 0]
 
     lincoeffs, v
 end
 
-composite(::Type{T}, n::Integer) where {T} = secondDirichlet_ChebyshevW(T, n)
+composite(::Type{T}, n::Integer) where {T} = secondDirichlet_Chebyshev(T, n)
 
 function composite_GSBSPG(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
-    lincoeffs[1] = poly_coeffs(T, x -> -cos(4 * sin(3*pi*x^2 + 1)), 100)
-    lincoeffs[2] = zeros(T, 0)
+    # lincoeffs[1] = poly_coeffs(T, x -> -cos(4 * sin(3*pi*x^2 + 1)), 100)
+    lincoeffs[1] = [zeros(T, 10); -1]
+    # lincoeffs[2] = [zeros(T, 77); 1]
+    lincoeffs[2] = atan34taylor(T, 111)
+    # lincoeffs[2] = zeros(T, 0)
     lincoeffs[3] = ones(T, 1)
 
     v = [sin(T(2)); 0]
+    # v = [one(T); 0]
 
     lincoeffs, v
 end
@@ -204,10 +212,60 @@ function composite_GSBSPG_NI(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Function}(undef, 3)
 
-    lincoeffs[1] = x -> -cos(4 * sin(3*pi*x^2 + 1))
+    # lincoeffs[1] = x -> -cos(4 * sin(3*pi*x^2 + 1))
+    lincoeffs[1] = x -> -x^10
+    # lincoeffs[2] = x -> x^77
+    lincoeffs[2] = x -> atan(3/4*x)
     lincoeffs[3] = x -> 1
 
     v = [sin(T(2)); 0]
+    # v = [one(T); 0]
+
+    lincoeffs, v
+end
+
+## a second order differential equation with very oscillatory coefficients
+function oscillatory(::Type{T}) where {T}
+    # 0.1*u^(4) + sin(40*x) * u'' + x^10 * u = f, u(-1) = u (1) = 1, u'(-1) = u'(1) = -pi
+    lincoeffs = Vector{Vector{T}}(undef, 5)
+
+    lincoeffs[3] = coeffs(x -> sin(40*x), T)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[1] = coeffs(x -> x^10, T)
+    lincoeffs[4] = zeros(T, 0)
+    lincoeffs[5] = ones(T, 1) / 1e1
+
+    v = [1 -1 1 -1; 1 1 1 1; 0 1 -4 9; 0 1 4 9] \ [one(T); one(T); -T(pi); -T(pi)]
+
+    lincoeffs, v
+end
+
+oscillatory(::Type{T}, n::Integer) where {T} = fourthDirichletNeumann_Chebyshev(T, n)
+
+function oscillatory_GSBSPG(::Type{T}) where {T}
+    # 0.1*u^(4) + sin(40*x) * u'' + x^10 * u = f, u(-1) = u (1) = 1, u'(-1) = u'(1) = -pi
+    lincoeffs = Vector{Vector{T}}(undef, 5)
+
+    lincoeffs[3] = sin40taylor(Float64, 139)
+    lincoeffs[2] = zeros(T, 0)
+    lincoeffs[1] = zeros(T, 11); lincoeffs[3][end] = 1
+    lincoeffs[4] = zeros(T, 0)
+    lincoeffs[5] = ones(T, 1) / 1e1
+
+    v = [1 -1 1 -1; 1 1 1 1; 0 1 -4 9; 0 1 4 9] \ [one(T); one(T); -T(pi); -T(pi)]
+
+    lincoeffs, v
+end
+
+function oscillatory_GSBSPG_NI(::Type{T}) where {T}
+    # 0.1*u^(4) + sin(40*x) * u'' + x^10 * u = f, u(-1) = u (1) = 1, u'(-1) = u'(1) = -pi
+    lincoeffs = Vector{Function}(undef, 5)
+
+    lincoeffs[3] = x -> sin(40 * x)
+    lincoeffs[1] = x -> x^10
+    lincoeffs[5] = x -> 1e-1
+
+    v = [1 -1 1 -1; 1 1 1 1; 0 1 -4 9; 0 1 4 9] \ [one(T); one(T); -T(pi); -T(pi)]
 
     lincoeffs, v
 end
@@ -271,6 +329,31 @@ function costaylor(::Type{T}, n::Integer) where {T}
         a[i] = 1 / factorial(i-1)
     end
     lmul!(-1, view(a, 3:4:n+1))
+
+    a
+end
+
+function sin40taylor(::Type{T}, n::Integer) where {T}
+    # compute the Taylor expansion of sin(40x) at 0 till degree n monomials (x^n)
+    a = zeros(T, n + 1)
+    a[2] = 40
+    for i = 4:2:n+1
+        a[i] = -a[i-2] * (40/(i-2)) * (40/(i-1))
+    end
+
+    a
+end
+
+function atan34taylor(::Type{T}, n::Integer) where {T}
+    # compute the Taylor expansion of arctan(3/4 * x) at 0 till degree n monomials (x^n)
+    a = zeros(T, n + 1)
+    a[2] = T(3)/4
+    c = -a[2]^2
+    for i = 4:2:n+1
+        a[i] = a[i-2] * c
+    end
+    a2 = view(a, 2:2:n+1)
+    broadcast!(/, a2, a2, 1:2:2*length(a2)-1)
 
     a
 end

@@ -163,8 +163,8 @@ function GSBSPG_Chebyshev_NI(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedM
     end
 
     # add bc to rhs
-    bcrange = colrange(L, length(bc))
-    mul!(view(fc, bcrange), view(L, bcrange, 1:length(bc)), bc, -1, true)
+    bcrange = colrange(L, length(bc))[end]
+    mul!(view(fc, 1:bcrange), view(L, 1:bcrange, 1:length(bc)), bc, -1, true)
 
     # equip homogeneous boundary conditions to L (with ql+N nonzero upper diagonals)
     L = Wrmul!(L, K, ql + N)
@@ -607,8 +607,8 @@ end
 #     end
 
 #     # add bc to rhs
-#     bcrange = colrange(L, length(bc))
-#     mul!(view(fc, bcrange), view(L, bcrange, 1:length(bc)), bc, -1, true)
+#     bcrange = colrange(L, length(bc))[end]
+#     mul!(view(fc, 1:bcrange), view(L, 1:bcrange, 1:length(bc)), bc, -1, true)
 
 #     # equip homogeneous boundary conditions to L (with ql+N nonzero upper diagonals)
 #     L = Wrmul!(L, K, ql + N)

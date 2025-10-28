@@ -1,11 +1,11 @@
 ## solving ODEs with banded Petrov-Galerkin methods
 
-function bandedPGsolve(lincoeffs::Vector{Vector{T}}, v::AbstractVector{T}, Wtrial::BandedMatrix{T}, Wtest::BandedMatrix{T}, Omega::Diagonal{T}, f) where {T}
+function bandedPGsolve(lincoeffs::Vector{Vector{T}}, v::AbstractVector{T}, R::BandedMatrix{T}, Q::BandedMatrix{T}, Omega::Diagonal{T}, f) where {T}
     # solve the linear system derived from banded Petrov-Galerkin methods
     N = length(lincoeffs)-1
-    @assert size(Wtrial, 1) == size(Wtest, 1) && Wtrial.l == Wtest.l == N "Incompatible of trial and test spaces"
-    @assert size(Omega, 1) == size(Wtest, 1) "Incompatible of inner product matrix and test spaces"
-    n = size(Wtrial, 1)
+    @assert size(R, 1) == size(Q, 1) && R.l == Q.l == N "Incompatible of trial and test spaces"
+    @assert size(Omega, 1) == size(Q, 1) "Incompatible of inner product matrix and test spaces"
+    n = size(R, 1)
 
     # construction for linear system corresponding to main equation
     A, Au = Lmatrix_Chebyshev(lincoeffs, n)
@@ -22,18 +22,18 @@ function bandedPGsolve(lincoeffs::Vector{Vector{T}}, v::AbstractVector{T}, Wtria
         append!(b, Zeros(T, n-length(b)))
     end
     # subtract the interpolation
-    mul!(view(b, colrange(A, length(v))), view(A, colrange(A, length(v)), 1:length(v)), v, -1, true)
-    OWtest = Dlmul!(Omega, copy(Wtest))  # merge Wtest^T * Omega = (Omega * Wtest)^T
-    Wtlmul!(OWtest, b)
+    mul!(view(b, 1:colrange(A, length(v))[end]), view(A, 1:colrange(A, length(v))[end], 1:length(v)), v, -1, true)
+    OQ = Dlmul!(Omega, copy(Q))  # merge Q^T * Omega = (Omega * Q)^T
+    Wtlmul!(OQ, b)
 
-    # full PG matrix, i.e., Wtest^T * Omega * A * Wtrial
-    AW = Wrmul!(A, Wtrial, Au)
-    WtAW = Wtlmul!(OWtest, AW, Au)
+    # full PG matrix, i.e., Q^T * Omega * A * R
+    AW = Wrmul!(A, R, Au)
+    WtAW = Wtlmul!(OQ, AW, Au)
     AB, ipiv = LinearAlgebra.LAPACK.gbtrf!(A.l, A.u-A.l, n-N, WtAW.data)
     x = LinearAlgebra.LAPACK.gbtrs!('N', A.l, A.u-A.l, n-N, AB, ipiv, b)
 
-    # convert back to Chebyshev series x = Wtrial * x + v
-    Wlmul!(Wtrial, x)
+    # convert back to Chebyshev series x = R * x + v
+    Wlmul!(R, x)
     if length(x) > length(v)
         axpy!(true, v, view(x, 1:length(v)))
     else
@@ -43,19 +43,19 @@ function bandedPGsolve(lincoeffs::Vector{Vector{T}}, v::AbstractVector{T}, Wtria
     x
 end
 
-function bandedPGmatrix_Chebyshev(lincoeffs::Vector{Vector{T}}, Wtrial::BandedMatrix{T}, Wtest::BandedMatrix{T}, Omega::Diagonal{T}) where {T}
+function bandedPGmatrix_Chebyshev(lincoeffs::Vector{Vector{T}}, R::BandedMatrix{T}, Q::BandedMatrix{T}, Omega::Diagonal{T}) where {T}
     # construct the matrix of banded Petrov-Galerkin methods related to Chebyshev basis
-    # lincoeffs are coefficients of linear ODEs, Wtrial and Wtest are matrices related to recombination of trial and test basis and Omega is the inner product matrix
-    @assert size(Wtrial, 1) == size(Wtest, 1) "Incompatible of trial and test spaces"
-    @assert size(Omega, 1) == size(Wtest, 1) "Incompatible of inner product matrix and test spaces"
-    n = size(Wtrial, 1)
+    # lincoeffs are coefficients of linear ODEs, R and Q are matrices related to recombination of trial and test basis and Omega is the inner product matrix
+    @assert size(R, 1) == size(Q, 1) "Incompatible of trial and test spaces"
+    @assert size(Omega, 1) == size(Q, 1) "Incompatible of inner product matrix and test spaces"
+    n = size(R, 1)
 
     # linear operator
     A, Au = Lmatrix_Chebyshev(lincoeffs, n)
-    # full PG matrix, i.e., Wtest^T * Omega * A * Wtrial
-    AW = Wrmul!(A, Wtrial, Au)
-    OWtest = Dlmul!(Omega, copy(Wtest))  # merge Wtest^T * Omega = (Omega * Wtest)^T
-    WtAW = Wtlmul!(OWtest, AW, Au)
+    # full PG matrix, i.e., Q^T * Omega * A * R
+    AW = Wrmul!(A, R, Au)
+    OQ = Dlmul!(Omega, copy(Q))  # merge Q^T * Omega = (Omega * Q)^T
+    WtAW = Wtlmul!(OQ, AW, Au)
 
     WtAW
 end
