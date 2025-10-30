@@ -12,6 +12,6 @@ include("MatrixPG.jl")
 include("MatrixUS.jl")
 include("Banded.jl")
 
-# GSBSPG
-include("GSBSPG.jl")
-include("GSBSPG_NI.jl")
+# MPG
+include("MPG.jl")
+include("MPG_NI.jl")

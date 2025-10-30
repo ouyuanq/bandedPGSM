@@ -16,7 +16,7 @@ end
 
 airy(::Type{T}, n::Integer) where {T} = secondDirichlet_Chebyshev(T, n)
 
-function airy_GSBSPG(::Type{T}; epsilon=T(1e-9)) where {T}
+function airy_MPG(::Type{T}; epsilon=T(1e-9)) where {T}
     # epsilon * u'' - x * u = 0, u(-1) = Ai(-(1/epsilon)^(1/3)), u(1) = Ai((1/epsilon)^(1/3))
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
@@ -29,7 +29,7 @@ function airy_GSBSPG(::Type{T}; epsilon=T(1e-9)) where {T}
     lincoeffs, v
 end
 
-function airy_GSBSPG_NI(::Type{T}; epsilon=T(1e-9)) where {T}
+function airy_MPG_NI(::Type{T}; epsilon=T(1e-9)) where {T}
     # epsilon * u'' - x * u = 0, u(-1) = Ai(-(1/epsilon)^(1/3)), u(1) = Ai((1/epsilon)^(1/3))
     lincoeffs = Vector{Function}(undef, 3)
 
@@ -72,7 +72,7 @@ end
 
 taylor(::Type{T}, n::Integer) where {T} = thirdrightNeumann_Chebyshev(T, n)
 
-function taylor_GSBSPG(::Type{T}) where {T}
+function taylor_MPG(::Type{T}) where {T}
     # u''' - (cos(x) + 2) * u' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
     lincoeffs = Vector{Vector{T}}(undef, 4)
 
@@ -86,7 +86,7 @@ function taylor_GSBSPG(::Type{T}) where {T}
     lincoeffs, v
 end
 
-function taylor_GSBSPG_NI(::Type{T}) where {T}
+function taylor_MPG_NI(::Type{T}) where {T}
     # u''' - (cos(x) + 2) * u' + 10 * exp(x) * u = f, u(-1) = u (1) = 1, u'(1) = 1
     lincoeffs = Vector{Function}(undef, 4)
 
@@ -191,7 +191,7 @@ end
 
 composite(::Type{T}, n::Integer) where {T} = secondDirichlet_Chebyshev(T, n)
 
-function composite_GSBSPG(::Type{T}) where {T}
+function composite_MPG(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Vector{T}}(undef, 3)
 
@@ -208,7 +208,7 @@ function composite_GSBSPG(::Type{T}) where {T}
     lincoeffs, v
 end
 
-function composite_GSBSPG_NI(::Type{T}) where {T}
+function composite_MPG_NI(::Type{T}) where {T}
     # u'' - cos(4 * sin(3*pi*x^2 + 1)) * u = f, u(-1) = u (1) = sin(2)
     lincoeffs = Vector{Function}(undef, 3)
 
@@ -242,7 +242,7 @@ end
 
 oscillatory(::Type{T}, n::Integer) where {T} = fourthDirichletNeumann_Chebyshev(T, n)
 
-function oscillatory_GSBSPG(::Type{T}) where {T}
+function oscillatory_MPG(::Type{T}) where {T}
     # 0.1*u^(4) + sin(40*x) * u'' + x^10 * u = f, u(-1) = u (1) = 1, u'(-1) = u'(1) = -pi
     lincoeffs = Vector{Vector{T}}(undef, 5)
 
@@ -257,7 +257,7 @@ function oscillatory_GSBSPG(::Type{T}) where {T}
     lincoeffs, v
 end
 
-function oscillatory_GSBSPG_NI(::Type{T}) where {T}
+function oscillatory_MPG_NI(::Type{T}) where {T}
     # 0.1*u^(4) + sin(40*x) * u'' + x^10 * u = f, u(-1) = u (1) = 1, u'(-1) = u'(1) = -pi
     lincoeffs = Vector{Function}(undef, 5)
 
@@ -285,7 +285,7 @@ end
 #     lincoeffs, T.(v)
 # end
 
-# function cosexp_GSBSPG(::Type{T}) where {T}
+# function cosexp_MPG(::Type{T}) where {T}
 #     # u''' - exp(x) * u'' + cos(x) * u = f, u(-1) = cos(sin(1)), u'(-1) = -10*pi*cos(1)*sin(sin(1)), u(0) = cos(sin(1))
 #     lincoeffs = Vector{Vector{T}}(undef, 4)
 

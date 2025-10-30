@@ -2,9 +2,9 @@
 # see Mortensen, Mikael. "A Generic and Strictly Banded Spectral Petrov–Galerkin Method for Differential Equations with Polynomial Coefficients." SIAM Journal on Scientific Computing 45.1 (2023): A123-A146.
 # all the matrices for the inner product forms are computed by numerical integration
 
-# GSBSPG discretization of differential operators by Chebyshev T polynomials with numerical integration
-function GSBSPG_Chebyshev_NI(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials
+# MPG discretization of differential operators by Chebyshev T polynomials with numerical integration
+function MPG_Chebyshev_NI(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials
     # the coefficients are store as monomials, i.e., lincoeffs[1] = [0; 0; 1] respresenting x^2
     # bc is a low degree Chebyshev polynomial that satisfies boundary conditions and fc is a vector containing inner products of rhs and test functions
 
@@ -172,8 +172,8 @@ function GSBSPG_Chebyshev_NI(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedM
     L, fc
 end
 
-function GSBSPG_Chebyshev_NI_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization (numerical integration) of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver
+function MPG_Chebyshev_NI_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization (numerical integration) of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver
 
     n = size(K, 1)
     if length(fc) >= n
@@ -184,7 +184,7 @@ function GSBSPG_Chebyshev_NI_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::B
     end
 
     # matrix
-    L, u = GSBSPG_Chebyshev_NI(T, lincoeffs, K, bc, f)
+    L, u = MPG_Chebyshev_NI(T, lincoeffs, K, bc, f)
 
     # standard solver (note that L is constructed with extra upper diagonals for factorization)
     ldiv!(lu!(L), view(u, 1:size(K, 2)))
@@ -200,8 +200,8 @@ function GSBSPG_Chebyshev_NI_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::B
     u
 end
 
-function GSBSPG_Chebyshev_NI(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials
+function MPG_Chebyshev_NI(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials
     # the coefficients are store as functions, for example, linfuncs[1] = x -> sin(x)
     # bc is a low degree Chebyshev polynomial that satisfies boundary conditions and fc is a vector containing inner products of rhs and test functions
     # no information about bandwidths is given a priori and a dense matrix should be constructed as a result
@@ -326,8 +326,8 @@ function GSBSPG_Chebyshev_NI(::Type{T}, linfuncs::Vector{Function}, K::BandedMat
     L, fc
 end
 
-function GSBSPG_Chebyshev_NI_solve(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization (numerical integration) of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver and no information about the bandwidths of coefficient matrix is given
+function MPG_Chebyshev_NI_solve(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization (numerical integration) of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver and no information about the bandwidths of coefficient matrix is given
 
     n = size(K, 1)
     if length(fc) >= n
@@ -338,7 +338,7 @@ function GSBSPG_Chebyshev_NI_solve(::Type{T}, linfuncs::Vector{Function}, K::Ban
     end
 
     # matrix
-    L, u = GSBSPG_Chebyshev_NI(T, linfuncs, K, bc, f)
+    L, u = MPG_Chebyshev_NI(T, linfuncs, K, bc, f)
 
     # standard solver (note that L is dense)
     ldiv!(lu!(L), view(u, 1:size(K, 2)))
@@ -387,7 +387,7 @@ function ttr!(Pnp1::AbstractVector{T}, Pn::AbstractVector{T}, Pnm1::AbstractVect
 end
 
 function Chebyshev_rhs_NI(::Type{T}, f::Function, m::Integer, n::Integer, k::Integer) where {T}
-    # compute the rhs in GSBSPG, i.e., f = B_{k}^{k} fhat where fhat = (If, Qtilde)_N and If is the interpolation of f on quadrature points and Qtilde = h\Q is scaled test function
+    # compute the rhs in MPG, i.e., f = B_{k}^{k} fhat where fhat = (If, Qtilde)_N and If is the interpolation of f on quadrature points and Qtilde = h\Q is scaled test function
 
     # quadrature points and weights
     nq = n + k
@@ -425,7 +425,7 @@ function Chebyshev_rhs_NI(::Type{T}, f::Function, m::Integer, n::Integer, k::Int
 end
 
 function Legendre_rhs_NI(::Type{T}, f::Function, m::Integer, n::Integer, k::Integer) where {T}
-    # compute the rhs in GSBSPG, i.e., f = B_{k}^{k} fhat where fhat = (If, Qtilde)_N and If is the interpolation of f on quadrature points and Qtilde = h\Q is scaled test function
+    # compute the rhs in MPG, i.e., f = B_{k}^{k} fhat where fhat = (If, Qtilde)_N and If is the interpolation of f on quadrature points and Qtilde = h\Q is scaled test function
 
     # quadrature points and weights
     nq = n + k
@@ -464,8 +464,8 @@ function Legendre_rhs_NI(::Type{T}, f::Function, m::Integer, n::Integer, k::Inte
 end
 
 ## MPG construction by numerical integration where coefficients are given in functions and parameter for bandwidths ql is also known a priori (method of little use)
-# function GSBSPG_Chebyshev_NI(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}, ql::Integer) where {T}
-#     # construct the GSBSPG discretization of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials
+# function MPG_Chebyshev_NI(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}, ql::Integer) where {T}
+#     # construct the MPG discretization of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials
 #     # the coefficients are store as functions, for example, linfuncs[1] = x -> sin(x)
 #     # bc is a low degree Chebyshev polynomial that satisfies boundary conditions and fc is a vector containing inner products of rhs and test functions
 #     # ql impacts the bandwidth of final matrix, where ql = maximum(length.(lincoeffs) .+ (N-1:-1:-1)) in the other implementation of numerical integration
@@ -616,8 +616,8 @@ end
 #     L, fc
 # end
 
-# function GSBSPG_Chebyshev_NI_solve(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}, ql::Integer) where {T}
-#     # construct the GSBSPG discretization (numerical integration) of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver, where ql is used to denote the bandwidths of final coefficient matrix as long as Taylor expansions of linfuncs[1], ..., linfuncs[N+1] are known to be finite
+# function MPG_Chebyshev_NI_solve(::Type{T}, linfuncs::Vector{Function}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}, ql::Integer) where {T}
+#     # construct the MPG discretization (numerical integration) of operator linfuncs[1]*u + linfuncs[2]*u' + ... + linfuncs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver, where ql is used to denote the bandwidths of final coefficient matrix as long as Taylor expansions of linfuncs[1], ..., linfuncs[N+1] are known to be finite
 
 #     n = size(K, 1)
 #     if length(fc) >= n
@@ -628,7 +628,7 @@ end
 #     end
 
 #     # matrix
-#     L, u = GSBSPG_Chebyshev_NI(T, linfuncs, K, bc, f, ql)
+#     L, u = MPG_Chebyshev_NI(T, linfuncs, K, bc, f, ql)
 
 #     # standard solver (note that L is constructed with extra upper diagonals for factorization)
 #     ldiv!(lu!(L), view(u, 1:size(K, 2)))

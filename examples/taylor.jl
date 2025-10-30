@@ -7,8 +7,8 @@ using BenchmarkTools, DelimitedFiles, Printf
 # set up for different methods
 T = Float64
 taylor_coeffs, taylor_v = taylor(T)
-taylor_coeffs_GSBSPG, taylor_v_GSBSPG = taylor_GSBSPG(T)
-taylor_coeffs_funcs, taylor_v_GSBSPG_NI = taylor_GSBSPG_NI(T)
+taylor_coeffs_MPG, taylor_v_MPG = taylor_MPG(T)
+taylor_coeffs_funcs, taylor_v_MPG_NI = taylor_MPG_NI(T)
 N = length(taylor_coeffs) - 1
 ue = x -> exp((x^2 - 1) / 2)
 f = x -> x^3*exp(x^2/2 - 1/2) + 10*exp(x)*exp(x^2/2 - 1/2) + 3*x*exp(x^2/2 - 1/2) - x*exp(x^2/2 - 1/2)*(cos(x) + 2)
@@ -26,13 +26,13 @@ for i in eachindex(nvec)
     u = bandedPGsolve(taylor_coeffs, taylor_v, taylor_R, taylor_Q, taylor_Omega, f)
     accuracy[i, 1] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n, n, N)
-    u = GSBSPG_Chebyshev_solve(T, taylor_coeffs_GSBSPG, taylor_R, taylor_v_GSBSPG, fc)
+    u = MPG_Chebyshev_solve(T, taylor_coeffs_MPG, taylor_R, taylor_v_MPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (numerical integration)
-    u = GSBSPG_Chebyshev_NI_solve(T, taylor_coeffs_funcs, taylor_R, taylor_v_GSBSPG_NI, fc)
+    # MPG (numerical integration)
+    u = MPG_Chebyshev_NI_solve(T, taylor_coeffs_funcs, taylor_R, taylor_v_MPG_NI, fc)
     accuracy[i, 3] = Chebyshev_L2error(u, ue, nvec[end])
 
     # # banded PG method (test and trial space are the same)
@@ -59,13 +59,13 @@ for i in eachindex(nvec)
     ben = @benchmark bandedPGmatrix_Chebyshev($(taylor_coeffs), $(taylor_R), $(taylor_Q), $(taylor_Omega))
     time_construct[i, 1] = minimum(ben).time / 1e9
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = zeros(T, n)
-    ben = @benchmark GSBSPG_Chebyshev($(T), $(taylor_coeffs_GSBSPG), $(taylor_R), $(taylor_v_GSBSPG), $(fc))
+    ben = @benchmark MPG_Chebyshev($(T), $(taylor_coeffs_MPG), $(taylor_R), $(taylor_v_MPG), $(fc))
     time_construct[i, 2] = minimum(ben).time / 1e9
 
-    # GSBSPG (numerical integration)
-    ben = @benchmark GSBSPG_Chebyshev_NI($(T), $(taylor_coeffs_funcs), $(taylor_R), $(taylor_v_GSBSPG_NI), $(fc))
+    # MPG (numerical integration)
+    ben = @benchmark MPG_Chebyshev_NI($(T), $(taylor_coeffs_funcs), $(taylor_R), $(taylor_v_MPG_NI), $(fc))
     time_construct[i, 3] = minimum(ben).time / 1e9
 
     @printf "%4i   %.2e   %.2e   %.2e\n" n time_construct[i, 1] time_construct[i, 2] time_construct[i, 3]

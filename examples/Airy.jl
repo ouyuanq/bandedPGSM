@@ -7,8 +7,8 @@ using BenchmarkTools, DelimitedFiles, Printf
 # set up for different methods
 T = Float64
 airy_coeffs, airy_v = airy(T)
-airy_coeffs_GSBSPG, airy_v_GSBSPG = airy_GSBSPG(T)
-airy_coeffs_funcs, airy_v_GSBSPG_NI = airy_GSBSPG_NI(T)
+airy_coeffs_MPG, airy_v_MPG = airy_MPG(T)
+airy_coeffs_funcs, airy_v_MPG_NI = airy_MPG_NI(T)
 N = length(airy_coeffs) - 1
 ue = x -> airyai(1e3 * x)
 f = x -> 0*x
@@ -32,14 +32,14 @@ for i in eachindex(nvec)
     u = bandedPGsolve(airy_coeffs, airy_v, airy_R, airy_Q, airy_Omega, f)
     accuracy[i, 5] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n, n, N)
-    u = GSBSPG_Chebyshev_solve(T, airy_coeffs_GSBSPG, airy_R, airy_v_GSBSPG, fc)
+    u = MPG_Chebyshev_solve(T, airy_coeffs_MPG, airy_R, airy_v_MPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (numerical integration)
+    # MPG (numerical integration)
     if n <= 30000
-        u = GSBSPG_Chebyshev_NI_solve(T, airy_coeffs_funcs, airy_R, airy_v_GSBSPG_NI, fc)
+        u = MPG_Chebyshev_NI_solve(T, airy_coeffs_funcs, airy_R, airy_v_MPG_NI, fc)
         accuracy[i, 3] = Chebyshev_L2error(u, ue, nvec[end])
     end
 
@@ -67,14 +67,14 @@ for i in eachindex(nvec)
     ben = @benchmark bandedPGsolve($(airy_coeffs), $(airy_v), $(airy_R), $(airy_Q), $(airy_Omega), $(f))
     time_solve[i, 1] = minimum(ben).time / 1e9
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n-N, n, N)
-    ben = @benchmark GSBSPG_Chebyshev_solve($(T), $(airy_coeffs_GSBSPG), $(airy_R), $(airy_v_GSBSPG), $(fc))
+    ben = @benchmark MPG_Chebyshev_solve($(T), $(airy_coeffs_MPG), $(airy_R), $(airy_v_MPG), $(fc))
     time_solve[i, 2] = minimum(ben).time / 1e9
 
-    # GSBSPG (numerical integration)
+    # MPG (numerical integration)
     if n <= 30000
-        ben = @benchmark GSBSPG_Chebyshev_NI_solve($(T), $(airy_coeffs_funcs), $(airy_R), $(airy_v_GSBSPG_NI), $(fc))
+        ben = @benchmark MPG_Chebyshev_NI_solve($(T), $(airy_coeffs_funcs), $(airy_R), $(airy_v_MPG_NI), $(fc))
         time_solve[i, 3] = minimum(ben).time / 1e9
     end
 

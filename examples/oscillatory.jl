@@ -7,8 +7,8 @@ using BenchmarkTools, DelimitedFiles, Printf
 # set up for different methods
 T = Float64
 oscillatory_coeffs, oscillatory_v = oscillatory(T)
-oscillatory_coeffs_GSBSPG, oscillatory_v_GSBSPG = oscillatory_GSBSPG(T)
-oscillatory_coeffs_funcs, oscillatory_v_GSBSPG_NI = oscillatory_GSBSPG_NI(T)
+oscillatory_coeffs_MPG, oscillatory_v_MPG = oscillatory_MPG(T)
+oscillatory_coeffs_funcs, oscillatory_v_MPG_NI = oscillatory_MPG_NI(T)
 N = length(oscillatory_coeffs) - 1
 ue = x -> exp(sin(pi*x))
 f = x -> x^10*exp(sin(pi*x)) - sin(40*x)*(pi^2*exp(sin(pi*x))*sin(pi*x) - pi^2*exp(sin(pi*x))*cos(pi*x)^2) + (3*pi^4*exp(sin(pi*x))*sin(pi*x)^2)/10 + (pi^4*exp(sin(pi*x))*sin(pi*x))/10 - (2*pi^4*exp(sin(pi*x))*cos(pi*x)^2)/5 + (pi^4*exp(sin(pi*x))*cos(pi*x)^4)/10 - (3*pi^4*exp(sin(pi*x))*cos(pi*x)^2*sin(pi*x))/5
@@ -26,13 +26,13 @@ for i in eachindex(nvec)
     u = bandedPGsolve(oscillatory_coeffs, oscillatory_v, oscillatory_R, oscillatory_Q, oscillatory_Omega, f)
     accuracy[i, 1] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = Chebyshev_rhs_NI(T, f, n, n, N)
-    u = GSBSPG_Chebyshev_solve(T, oscillatory_coeffs_GSBSPG, oscillatory_R, oscillatory_v_GSBSPG, fc)
+    u = MPG_Chebyshev_solve(T, oscillatory_coeffs_MPG, oscillatory_R, oscillatory_v_MPG, fc)
     accuracy[i, 2] = Chebyshev_L2error(u, ue, nvec[end])
 
-    # GSBSPG (numerical integration)
-    u = GSBSPG_Chebyshev_NI_solve(T, oscillatory_coeffs_funcs, oscillatory_R, oscillatory_v_GSBSPG_NI, fc)
+    # MPG (numerical integration)
+    u = MPG_Chebyshev_NI_solve(T, oscillatory_coeffs_funcs, oscillatory_R, oscillatory_v_MPG_NI, fc)
     accuracy[i, 3] = Chebyshev_L2error(u, ue, nvec[end])
 
     @printf "%4i   %.2e   %.2e   %.2e\n" n accuracy[i, 1] accuracy[i, 2] accuracy[i, 3]
@@ -54,13 +54,13 @@ for i in eachindex(nvec)
     ben = @benchmark bandedPGmatrix_Chebyshev($(oscillatory_coeffs), $(oscillatory_R), $(oscillatory_Q), $(oscillatory_Omega))
     time_construct[i, 1] = minimum(ben).time / 1e9
 
-    # GSBSPG (recurrence)
+    # MPG (recurrence)
     fc = zeros(T, n-2)
-    ben = @benchmark GSBSPG_Chebyshev($(T), $(oscillatory_coeffs_GSBSPG), $(oscillatory_R), $(oscillatory_v_GSBSPG), $(fc))
+    ben = @benchmark MPG_Chebyshev($(T), $(oscillatory_coeffs_MPG), $(oscillatory_R), $(oscillatory_v_MPG), $(fc))
     time_construct[i, 2] = minimum(ben).time / 1e9
 
-    # GSBSPG (numerical integration)
-    ben = @benchmark GSBSPG_Chebyshev_NI($(T), $(oscillatory_coeffs_funcs), $(oscillatory_R), $(oscillatory_v_GSBSPG_NI), $(fc))
+    # MPG (numerical integration)
+    ben = @benchmark MPG_Chebyshev_NI($(T), $(oscillatory_coeffs_funcs), $(oscillatory_R), $(oscillatory_v_MPG_NI), $(fc))
     time_construct[i, 3] = minimum(ben).time / 1e9
 
     @printf "%4i   %.2e   %.2e   %.2e\n" n time_construct[i, 1] time_construct[i, 2] time_construct[i, 3]

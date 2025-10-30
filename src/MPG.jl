@@ -155,9 +155,9 @@ function Chebyshev_L(::Type{T}, m::Integer, n::Integer, k::Integer, q::Integer, 
     L
 end
 
-# GSBSPG discretization of differential operators by Chebyshev T polynomials
-function GSBSPG_Chebyshev(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials
+# MPG discretization of differential operators by Chebyshev T polynomials
+function MPG_Chebyshev(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials
     # the coefficients are store as monomials, i.e., lincoeffs[1] = [0; 0; 1] respresenting x^2
     # bc is a low degree Chebyshev polynomial that satisfies boundary conditions and fc is a vector containing inner products of rhs and test functions
 
@@ -210,9 +210,9 @@ function GSBSPG_Chebyshev(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatr
     L, fc
 end
 
-# construction and solution of GSBSPG
-function GSBSPG_Chebyshev_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization (recursion) of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver
+# construction and solution of MPG
+function MPG_Chebyshev_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization (recursion) of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Chebyshev T polynomials and solve by banded solver
 
     n = size(K, 1)
     if length(fc) >= n
@@ -223,7 +223,7 @@ function GSBSPG_Chebyshev_solve(::Type{T}, lincoeffs::Vector{Vector{T}}, K::Band
     end
 
     # matrix
-    L, u = GSBSPG_Chebyshev(T, lincoeffs, K, bc, f)
+    L, u = MPG_Chebyshev(T, lincoeffs, K, bc, f)
 
     # standard solver (note that L is constructed with extra upper diagonals for factorization)
     ldiv!(lu!(L), view(u, 1:size(K, 2)))
@@ -241,7 +241,7 @@ end
 
 # rhs for Chebyshev T polynomials
 function Chebyshev_rhs(::Type{T}, f, m::Integer, n::Integer, k::Integer) where {T}
-    # compute the rhs in GSBSPG, i.e., f = B_{k}^{k} fhat where fhat = (f, Qtilde) and Qtilde = h\Q is scaled test function
+    # compute the rhs in MPG, i.e., f = B_{k}^{k} fhat where fhat = (f, Qtilde) and Qtilde = h\Q is scaled test function
     # Note that m, n are dimensions of coefficient matrix
 
     # compute the nomal Chebyshev coefficients
@@ -421,9 +421,9 @@ function Legendre_L(::Type{T}, m::Integer, n::Integer, k::Integer, q::Integer, l
     L
 end
 
-# GSBSPG discretization of differential operators by Legendre polynomials
-function GSBSPG_Legendre(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
-    # construct the GSBSPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Legendre polynomials
+# MPG discretization of differential operators by Legendre polynomials
+function MPG_Legendre(::Type{T}, lincoeffs::Vector{Vector{T}}, K::BandedMatrix{T}, bc::AbstractVector{T}, fc::AbstractVector{T}) where {T}
+    # construct the MPG discretization of operator lincoeffs[1]*u + lincoeffs[2]*u' + ... + lincoeffs[N+1]*u^{N} by Legendre polynomials
     # the coefficients are store as monomials, i.e., lincoeffs[1] = [0; 0; 1] respresenting x^2
     # bc is a low degree Legendre polynomial that satisfies boundary conditions and fc is a vector containing inner products of rhs and test functions
 
